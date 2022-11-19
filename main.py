@@ -1,7 +1,6 @@
 import subprocess
 import os
 from dotenv import load_dotenv
-import gdb
 import uuid
 import random
 import string
@@ -133,7 +132,7 @@ if __name__ == "__main__":
         
 
         
-        # TODO: ask for image folder?
+        # ask for image folder?
         imageFolder = "./images"
         
         outputFolderPath = "./output"
@@ -150,7 +149,7 @@ if __name__ == "__main__":
         # encode: DONE!
         loopEncode(key, imageFolder, message)
 
-        # TODO: encrypt key with cpabe
+        # encrypt key with cpabe
         abe_pubkey_path = "../abe/pub_key"
         sessionKeyFilePath = f"./keys/{new_set_id}.key.txt"
         try:
@@ -174,11 +173,11 @@ if __name__ == "__main__":
         awsBucketName = os.getenv('AWS_BUCKET_NAME')
         awsRegion = os.getenv('AWS_REGION')
 
-        # TODO: CHANGE TO ENCRYPTED KEY PATH
+        # CHANGE TO ENCRYPTED KEY PATH
         try:
             print(f"Uploading session key", end="")
-            # response = cloudClient.upload_file(f"./keys/{new_set_id}.key.txt.cpabe", awsBucketName, f"{user_id}/{new_set_id}/{new_set_id}.key.txt")
-            response = cloudClient.upload_file(f"./keys/{new_set_id}.key.txt", awsBucketName, f"{user_id}/{new_set_id}/{new_set_id}.key.txt")
+            response = cloudClient.upload_file(f"./keys/{new_set_id}.key.txt.cpabe", awsBucketName, f"{user_id}/{new_set_id}/{new_set_id}.key.txt")
+            # response = cloudClient.upload_file(f"./keys/{new_set_id}.key.txt", awsBucketName, f"{user_id}/{new_set_id}/{new_set_id}.key.txt")
             print("...done", end="\n")
             keyUrl = f"https://{awsBucketName}.s3.{awsRegion}.amazonaws.com/{user_id}/{new_set_id}/{new_set_id}.key.txt"
             payload["keyPath"] = keyUrl            
@@ -201,7 +200,7 @@ if __name__ == "__main__":
                 print(e)
         # print(payload)
 
-        # TODO: send payload to master
+        # send payload to master
         response = requests.post(f"{api_url}/new", json=payload)
         print(json.loads(response.text))
         
