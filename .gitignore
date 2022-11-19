@@ -5,4 +5,8 @@ output
 keys
 test.txt
 uuid.txt
+sets.json
+
+*.txt
+
 __pycache__
