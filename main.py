@@ -12,6 +12,7 @@ import base64
 import textwrap
 import math
 from itertools import islice
+import boto3
 
 def generate32BitKey():
     res = ''.join(random.choices(string.ascii_letters, k=32))
@@ -152,11 +153,57 @@ if __name__ == "__main__":
         # TODO: encrypt key with cpabe
         abe_pubkey_path = "../abe/pub_key"
         sessionKeyFilePath = f"./keys/{new_set_id}.key.txt"
-        executeCommand(["cpabe-enc", abe_pubkey_path, sessionKeyFilePath, f"({attribute})"])
+        try:
+            executeCommand(["cpabe-enc", abe_pubkey_path, sessionKeyFilePath, f"({attribute})"])
+        except:
+            print("execute command error")
         
-        # TODO: loop upload and add each url to Map {url: url, sequence: sequence_number}
-        
+        # loop upload and add each url to Map {url: url, sequence: sequence_number}
+        cloudClient = boto3.client(
+            's3',
+            aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+            aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+            region_name=os.getenv('AWS_REGION')
+        )
+        clientResponse = cloudClient.list_buckets()
+
+        outputDirList = os.listdir('./output')
+
+        payload = {"files": [], "set_id": new_set_id, "uuid": user_id, "user_attributes": attribute.split()}
+
+        awsBucketName = os.getenv('AWS_BUCKET_NAME')
+        awsRegion = os.getenv('AWS_REGION')
+
+        # TODO: CHANGE TO ENCRYPTED KEY PATH
+        try:
+            print(f"Uploading session key", end="")
+            # response = cloudClient.upload_file(f"./keys/{new_set_id}.key.txt.cpabe", awsBucketName, f"{user_id}/{new_set_id}/{new_set_id}.key.txt")
+            response = cloudClient.upload_file(f"./keys/{new_set_id}.key.txt", awsBucketName, f"{user_id}/{new_set_id}/{new_set_id}.key.txt")
+            print("...done", end="\n")
+            keyUrl = f"https://{awsBucketName}.s3.{awsRegion}.amazonaws.com/{user_id}/{new_set_id}/{new_set_id}.key.txt"
+            payload["keyPath"] = keyUrl            
+        except Exception as e:
+            print(e)
+
+
+        seq = 1
+        for fileName in outputDirList:
+            # print(fileName)
+            try:
+                print(f"Uploading {fileName}", end="")
+                response = cloudClient.upload_file(f"./output/{fileName}", awsBucketName, f"{user_id}/{new_set_id}/{fileName}")
+                print("...done", end="\n")
+                url = f"https://{awsBucketName}.s3.{awsRegion}.amazonaws.com/{user_id}/{new_set_id}/{fileName}"
+                payload["files"].append({"url": url, "sequence": seq})
+                seq+=1
+                # print(url)
+            except Exception as e:
+                print(e)
+        # print(payload)
+
         # TODO: send payload to master
+        response = requests.post(f"{api_url}/new", json=payload)
+        print(json.loads(response.text))
         
         
 
