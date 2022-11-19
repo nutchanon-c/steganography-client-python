@@ -12,6 +12,7 @@ import textwrap
 import math
 from itertools import islice
 import boto3
+import az_sql
 
 def generate32BitKey():
     res = ''.join(random.choices(string.ascii_letters, k=32))
@@ -102,14 +103,22 @@ if __name__ == "__main__":
 
     menu = int(input("Select menu: \n1. New image set\n2. Request Image Set\n3. Revoke\n"))
     attribute = "sysadmin"
-    if menu == 1:
-        
+    try:
+        az_sql.insertPerson(user_id, [attribute])
+    except:
+        print("sql insert user exception")
+    if menu == 1:        
         # send request for new picture set id
         res = json.loads(requests.get(f"{api_url}/newID").text)
         new_set_id = res.get('id')
         print(f"new set id: {new_set_id}")
         key = generate32BitKey()
         print(f"session key generated: {key}")
+
+        try:
+            az_sql.insertImageSet(new_set_id, user_id, [attribute])
+        except:
+            print("sql insert image set exception")
 
         # save key to file
         if not os.path.exists("./keys"):
@@ -180,7 +189,11 @@ if __name__ == "__main__":
             # response = cloudClient.upload_file(f"./keys/{new_set_id}.key.txt", awsBucketName, f"{user_id}/{new_set_id}/{new_set_id}.key.txt")
             print("...done", end="\n")
             keyUrl = f"https://{awsBucketName}.s3.{awsRegion}.amazonaws.com/{user_id}/{new_set_id}/{new_set_id}.key.txt"
-            payload["keyPath"] = keyUrl            
+            payload["keyPath"] = keyUrl    
+            try:
+                az_sql.insertESK(new_set_id, keyUrl)        
+            except:
+                print("sql upload key exception")
         except Exception as e:
             print(e)
 
@@ -194,6 +207,10 @@ if __name__ == "__main__":
                 print("...done", end="\n")
                 url = f"https://{awsBucketName}.s3.{awsRegion}.amazonaws.com/{user_id}/{new_set_id}/{fileName}"
                 payload["files"].append({"url": url, "sequence": seq})
+                try:
+                    az_sql.insertSG(new_set_id, keyUrl, url, seq)
+                except:
+                    print("sql insert SG exception")
                 seq+=1
                 # print(url)
             except Exception as e:
