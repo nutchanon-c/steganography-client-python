@@ -185,7 +185,7 @@ if __name__ == "__main__":
         # CHANGE TO ENCRYPTED KEY PATH
         try:
             print(f"Uploading session key", end="")
-            response = cloudClient.upload_file(f"./keys/{new_set_id}.key.txt.cpabe", awsBucketName, f"{user_id}/{new_set_id}/{new_set_id}.key.txt")
+            response = cloudClient.upload_file(f"./keys/{new_set_id}.key.txt.cpabe", awsBucketName, f"{user_id}/{new_set_id}/{new_set_id}.key.txt.cpabe")
             # response = cloudClient.upload_file(f"./keys/{new_set_id}.key.txt", awsBucketName, f"{user_id}/{new_set_id}/{new_set_id}.key.txt")
             print("...done", end="\n")
             keyUrl = f"https://{awsBucketName}.s3.{awsRegion}.amazonaws.com/{user_id}/{new_set_id}/{new_set_id}.key.txt"
@@ -228,10 +228,11 @@ if __name__ == "__main__":
                 dataToSave = json.dumps({ptPath: new_set_id })
                 f.write(dataToSave)
         else:
-            with open("./sets.json", "w") as f:
+            with open("./sets.json") as f:
                 loadedData = json.loads(f.read())
                 loadedData[ptPath] = new_set_id
-                f.write(json.dumps(loadedData))
+                with open("./sets.json", "w") as w:
+                    w.write(json.dumps(loadedData))
 
                 
 
