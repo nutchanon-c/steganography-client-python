@@ -221,6 +221,21 @@ if __name__ == "__main__":
         # send payload to master
         response = requests.post(f"{api_url}/new", json=payload)
         print(json.loads(response.text))
+
+        # save plaintext and setid
+        if not os.path.exists('./sets.json'):
+            with open("./sets.json", "w") as f:
+                dataToSave = json.dumps({ptPath: new_set_id })
+                f.write(dataToSave)
+        else:
+            with open("./sets.json", "w") as f:
+                loadedData = json.loads(f.read())
+                loadedData[ptPath] = new_set_id
+                f.write(json.dumps(loadedData))
+
+                
+
+        
         
         
 
