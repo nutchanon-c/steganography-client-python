@@ -5,3 +5,4 @@ pycryptodome==3.15.0
 python-dotenv==0.21.0
 requests==2.28.1
 stegano==0.10.2
+pyodbc==4.0.35
