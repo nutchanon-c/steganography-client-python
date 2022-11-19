@@ -2,3 +2,6 @@
 node_modules
 images
 output
+keys
+test.txt
+uuid.txt

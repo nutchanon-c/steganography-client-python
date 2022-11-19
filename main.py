@@ -1,6 +1,22 @@
 import subprocess
 import os
 from dotenv import load_dotenv
+import gdb
+import uuid
+import random
+import string
+import requests
+import json
+from cryptography.fernet import Fernet
+import base64
+import textwrap
+import math
+from itertools import islice
+
+def generate32BitKey():
+    res = ''.join(random.choices(string.ascii_letters, k=32))
+    return res
+
 
 def itersplit_into_x_chunks(string, x): # we assume here that x is an int and > 0
     size = len(string)
@@ -10,29 +26,36 @@ def itersplit_into_x_chunks(string, x): # we assume here that x is an int and > 
 
 def loopEncode(key, path, message):
     listDir = os.listdir(path)
-    print(len(listDir))
-    splitList = list(itersplit_into_x_chunks(message, len(listDir)))
+    # messageSplitList = textwrap.wrap(message,  math.ceil(len(message) / (len(listDir) - 1)))    
+    # print("".join(splitList))
+    # print(len(listDir))
+    # print(len(messageSplitList))
+    # print(messageSplitList)
+    # print(''.join(messageSplitList) == message)
+
+    chunksize = -(-len(message) // len(listDir))
+    iterator = iter(message)
+    messageSplitList = []
+    for _ in range(len(listDir)):
+        messageSplitList.append(''.join(islice(iterator, chunksize)))
+        # print(''.join(list(islice(iterator, chunksize))))
+    # print(messageSplitList)
+
     for i in range(len(listDir)):
-        word = splitList[i]
+        word = messageSplitList[i]  
         fileName = listDir[i]
         f = os.path.join(path, fileName)
-        print(f)
+        # print(f)
         p = subprocess.Popen(['node', './stega-encode.js', f, word, key, f"{(str(i)).zfill(len(str(len(listDir))))}.jpg"], stdout=subprocess.PIPE)
         out = readCleanSTDOUT(p)
-        print(out)
-
-    # for filename in listDir:
-    #     f = os.path.join(path, filename)
-    #     print(f)
-
-    #     p = subprocess.Popen(['node', './stega-encode.js', f, message, key], stdout=subprocess.PIPE)
-    #     out = readCleanSTDOUT(p)
-    #     print(out)
+        # print(out)
+        
 
 def loopDecode(folderPath, key):
     pass
 
-def executeCommand(command):
+def executeCommand(commandList):
+    p = subprocess.Popen(commandList, stdout=subprocess.PIPE)
     pass
 
 
@@ -40,26 +63,102 @@ def executeCommandAndGetValue(command):
     # TODO: implement. See dunder main
     pass
 
+def encryptWithFernet(key, message):    
+    encodedKey = key.encode("utf-8")
+    keyB64 = base64.b64encode(encodedKey)
+    fernet = Fernet(keyB64)
+    encryptedMessage = fernet.encrypt(bytes(message, encoding="utf-8"))
+    encryptedString = encryptedMessage.decode("utf-8")
+    return encryptedString
+
+def decryptWithFernet(key, message):
+    encodedKey = key.encode("utf-8")
+    keyB64 = base64.b64encode(encodedKey)
+    fernet = Fernet(keyB64)
+    decrypted = fernet.decrypt(message.encode("utf-8"))
+    decryptedString = decrypted.decode("utf-8")
+    return decryptedString
 
 def readCleanSTDOUT(p):
     return (p.stdout.read().decode()).strip()
 
+def getUserID():
+    if not os.path.exists('./uuid.txt'):
+        id = uuid.uuid4()
+        with open ("./uuid.txt", "w") as f:
+            f.write(str(id))
+        return id
+    else:
+        with open("./uuid.txt","r") as f:
+            return f.read()
+
 
 
 if __name__ == "__main__":    
-    # TODO: LOAD UUID
-    # TODO: LOAD KEY FROM FILE?
     load_dotenv()
+    api_url = os.getenv('API_MASTER_URL')
+    user_id = getUserID()
+    print(f"User id: {user_id}")
 
-    key = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
-    message = "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum."
-    outputFolderPath = "./output"
-    imageFolder = "./images"
-    if not os.path.exists(outputFolderPath):
-        os.mkdir("output")
+    menu = int(input("Select menu: \n1. New image set\n2. Request Image Set\n3. Revoke\n"))
+    attribute = "sysadmin"
+    if menu == 1:
+        
+        # send request for new picture set id
+        res = json.loads(requests.get(f"{api_url}/newID").text)
+        new_set_id = res.get('id')
+        print(f"new set id: {new_set_id}")
+        key = generate32BitKey()
+        print(f"session key generated: {key}")
 
+        # save key to file
+        if not os.path.exists("./keys"):
+            os.makedirs("./keys")
+        with open(f"./keys/{new_set_id}.key.txt", "w") as f:
+            f.write(key)        
 
-    loopEncode(key, imageFolder, message)
+        # ask for plaintext file
+        ptPath = input("Plaintext file path: ")
+
+        # read plaintext from file
+        try:
+            f = open(ptPath, "r")
+            message = f.read()
+            # print(message)
+            f.close()
+        except Exception as e:
+            print(f"open file error: {e}")
+            exit(1)
+        
+
+        
+        # TODO: ask for image folder?
+        imageFolder = "./images"
+        
+        outputFolderPath = "./output"
+
+        if not os.path.exists(outputFolderPath):
+            os.mkdir("output")
+
+        # encrypt plaintext with key using fernet
+        encrypted = encryptWithFernet(key, message)
+        # print(encrypted)
+        # decrypted = decryptWithFernet(key, encrypted)
+        # print(decrypted)
+        
+        # encode: DONE!
+        loopEncode(key, imageFolder, message)
+
+        # TODO: encrypt key with cpabe
+        abe_pubkey_path = "../abe/pub_key"
+        sessionKeyFilePath = f"./keys/{new_set_id}.key.txt"
+        executeCommand(["cpabe-enc", abe_pubkey_path, sessionKeyFilePath, f"({attribute})"])
+        
+        # TODO: loop upload and add each url to Map {url: url, sequence: sequence_number}
+        
+        # TODO: send payload to master
+        
+        
 
     # listDir = os.listdir(imageFolder)
     # for filename in listDir:

@@ -3,14 +3,15 @@ const sg = require("any-steganography");
 const fs = require("fs");
 var args = process.argv;
 function stegaEncode(guestFile, message, outputFile, key) {
-    const buffer = sg.default.write(guestFile, message, key);
-    fs.writeFile(outputFile, buffer, (err) => {
-        if (err) {
-            console.log(err);
-            return;
-        }
-    });
-    return;
+  const buffer = sg.default.write(guestFile, message, key);
+  fs.writeFile(outputFile, buffer, (err) => {
+    if (err) {
+      console.log(err);
+      return;
+    }
+  });
+  console.log("encode done");
+  return;
 }
 
 const file = args[2];
