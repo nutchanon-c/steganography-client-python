@@ -5,3 +5,4 @@ output
 keys
 test.txt
 uuid.txt
+__pycache__
