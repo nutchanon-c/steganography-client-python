@@ -209,8 +209,9 @@ if __name__ == "__main__":
                 payload["files"].append({"url": url, "sequence": seq})
                 try:
                     az_sql.insertSG(new_set_id, keyUrl, url, seq)
-                except:
+                except Exception as e:
                     print("sql insert SG exception")
+                    print(e)
                 seq+=1
                 # print(url)
             except Exception as e:
