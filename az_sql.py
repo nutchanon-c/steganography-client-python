@@ -113,6 +113,47 @@ def editESK(psid, newLink):
             cursor.execute(query)
 
 
+def resetDB():
+    with pyodbc.connect('DRIVER='+DRIVER+';SERVER=tcp:'+SERVER+';PORT=1433;DATABASE='+DATABASE+';UID='+USERNAME+';PWD='+ PASSWORD) as conn:
+        query = f'''
+        DROP TABLE SG, ESK, ImageSet, Person
+-- Create Person table
+CREATE TABLE Person
+(
+    userid NVARCHAR(256)  PRIMARY KEY,
+    attriList NVARCHAR(256) NOT NULL,
+
+)
+
+-- Create IS table
+CREATE TABLE ImageSet
+(
+    psid NVARCHAR(256)  PRIMARY KEY,
+    userid NVARCHAR(256) REFERENCES Person (userid),
+    permitAttriList NVARCHAR(256) NOT NULL
+)
+
+-- Create ESK table
+CREATE TABLE ESK
+(
+    psid NVARCHAR(256) REFERENCES ImageSet (psid),
+    enc_filePath NVARCHAR(256),
+)
+
+-- Create SG table
+CREATE TABLE SG
+(
+    psid NVARCHAR(256) REFERENCES ImageSet (psid),
+    enc_filePath NVARCHAR(256),
+    stego_filePath NVARCHAR(256) NOT NULL,
+    seqNo INT,
+
+)
+        '''
+        with conn.cursor() as cursor:
+            cursor.execute(query)
+
+
 if __name__ == "__main__":
     # insertPerson("test1", [1, 2])
     # insertImageSet(1, "test", [1, 2])
@@ -124,5 +165,6 @@ if __name__ == "__main__":
     # print(getISOwner(1))
     # print(getSessionKey(1))
     # print(getAllImage(1))
-    editESK(1, "c")
+    # editESK(1, "c")
+    resetDB()
 
