@@ -298,8 +298,15 @@ if __name__ == "__main__":
         # except Exception as e:
         #     print(e)
 
+
+
+        """
+        MOCK DATA: 
+        set id: d336d5fd-e502-4440-872c-f68cce4c71bc
+        key: VTZfYZPvHnaiJCkKXqsnqJgaJztvYINz
+        """
         # TODO: USE ACTUAL KEY
-        extractEncrypted = loopDecode(f"./downloads/images", "VEmTHAFrTnRQMynNuzdEvPkjBiGNPIaG")
+        extractEncrypted = loopDecode(f"./downloads/images", "VTZfYZPvHnaiJCkKXqsnqJgaJztvYINz")
 
         # SAVE DECRYPTED TO FILE
         if not os.path.exists('./decrypted'):
