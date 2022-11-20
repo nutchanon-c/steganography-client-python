@@ -14,6 +14,7 @@ from itertools import islice
 import boto3
 import az_sql
 import shutil
+import time
 def generate32BitKey():
     res = ''.join(random.choices(string.ascii_letters, k=32))
     return res
@@ -29,7 +30,9 @@ def loopEncode(key, path, message):
     listDir = os.listdir(path)
     # messageSplitList = textwrap.wrap(message,  math.ceil(len(message) / (len(listDir) - 1)))    
     # print("".join(splitList))
-    # print(len(listDir))
+    listDir = sorted(listDir)
+    print(f"len imageDir: {len(listDir)}")
+    print(listDir)
     # print(len(messageSplitList))
     # print(messageSplitList)
     # print(''.join(messageSplitList) == message)
@@ -98,7 +101,16 @@ def getUserID():
 if __name__ == "__main__":    
     load_dotenv()
     for i in range(0, 100, 5):
+
         original = "./images/1.jpg"
+
+        for j in range(i + 1, i + 6):
+            output = f"./images/{j}.jpg"
+            try:
+                shutil.copyfile(original, output)
+            except:
+                pass
+
         api_url = os.getenv('API_MASTER_URL')
         user_id = getUserID()
         print(f"User id: {user_id}")
@@ -180,7 +192,7 @@ if __name__ == "__main__":
             clientResponse = cloudClient.list_buckets()
 
             outputDirList = os.listdir('./output')
-
+            outputDirList = sorted(outputDirList)
             payload = {"files": [], "set_id": new_set_id, "uuid": user_id, "user_attributes": attribute.split()}
 
             awsBucketName = os.getenv('AWS_BUCKET_NAME')
@@ -189,8 +201,8 @@ if __name__ == "__main__":
             # CHANGE TO ENCRYPTED KEY PATH
             try:
                 print(f"Uploading session key", end="")
-                # response = cloudClient.upload_file(f"./keys/{new_set_id}.key.txt.cpabe", awsBucketName, f"{user_id}/{new_set_id}/{new_set_id}.key.txt")
-                response = cloudClient.upload_file(f"./keys/{new_set_id}.key.txt", awsBucketName, f"{user_id}/{new_set_id}/{new_set_id}.key.txt")
+                response = cloudClient.upload_file(f"./keys/{new_set_id}.key.txt.cpabe", awsBucketName, f"{user_id}/{new_set_id}/{new_set_id}.key.txt")
+                # response = cloudClient.upload_file(f"./keys/{new_set_id}.key.txt", awsBucketName, f"{user_id}/{new_set_id}/{new_set_id}.key.txt")
                 print("...done", end="\n")
                 keyUrl = f"https://{awsBucketName}.s3.{awsRegion}.amazonaws.com/{user_id}/{new_set_id}/{new_set_id}.key.txt"
                 payload["keyPath"] = keyUrl    
@@ -236,9 +248,9 @@ if __name__ == "__main__":
             #         loadedData = json.loads(f.read())
             #         loadedData[ptPath] = new_set_id
             #         f.write(json.dumps(loadedData))
-            for j in range(i+2, i+2+4):
-                output = f"./images/{j}.jpg"
-                shutil.copyfile(original, output)
+            
+
+            # time.sleep(0.1)
             for fileName in os.listdir("./output"):
                 file_path = os.path.join("./output", fileName)
                 try:
