@@ -332,3 +332,14 @@ if __name__ == "__main__":
         print("Deletion complete")
         print("Exiting program")
         exit(0)
+
+    elif menu == 3:
+        print("Revoke")
+        revokeSetId = input("Picture Set ID: ")
+        newAttributes = input("New Attributes (comma-separated): ")
+        newAttributesList = newAttributes.split(",")
+        print(newAttributesList)
+        payload = {"uuid": user_id, "new_attr": newAttributesList, "set_id": revokeSetId}
+        response = requests.post(f"{api_url}/revoke", json=payload)
+        print(response.text)
+
