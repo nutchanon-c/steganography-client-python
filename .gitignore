@@ -6,3 +6,4 @@ keys
 test.txt
 uuid.txt
 __pycache__
+gdb.py
