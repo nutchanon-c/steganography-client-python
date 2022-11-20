@@ -1,3 +1,4 @@
+import shutil
 import subprocess
 import os
 from dotenv import load_dotenv
@@ -103,6 +104,16 @@ def getUserID():
         with open("./uuid.txt","r") as f:
             return f.read()
 
+def deleteFilesFromFolder(folder):
+        for fileName in os.listdir(folder):
+            file_path = os.path.join(folder, fileName)
+            try:
+                if os.path.isfile(file_path) or os.path.islink(file_path):
+                    os.unlink(file_path)
+                elif os.path.isdir(file_path):
+                    shutil.rmtree(file_path)
+            except Exception as e:
+                print('Failed to delete %s. Reason: %s' % (file_path, e))
 
 
 if __name__ == "__main__":    
@@ -243,6 +254,7 @@ if __name__ == "__main__":
                 loadedData[ptPath] = new_set_id
                 with open("./sets.json", "w") as w:
                     w.write(json.dumps(loadedData))
+        deleteFilesFromFolder('./output')
 
 
     elif menu == 2:
@@ -293,6 +305,10 @@ if __name__ == "__main__":
             os.makedirs('./decrypted')
         with open(f"./decrypted/{requestSetId}.txt", "w") as f:
             f.write(extractEncrypted)
+        
+        deleteFilesFromFolder('./downloads/images')
+        deleteFilesFromFolder('./downloads/keys')
+
 
 
         
