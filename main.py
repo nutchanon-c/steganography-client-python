@@ -43,7 +43,7 @@ def loopEncode(key, path, message):
         messageSplitList.append(''.join(islice(iterator, chunksize)))
         # print(''.join(list(islice(iterator, chunksize))))
     # print(messageSplitList)
-    print(messageSplitList)
+    # print(messageSplitList)
     for i in range(len(listDir)):
         word = messageSplitList[i]  
         fileName = listDir[i]
@@ -61,9 +61,9 @@ def loopDecode(folderPath, key):
     for fileName in listDir:
         p = subprocess.Popen(['node', './stega-decode.js', f"{folderPath}/{fileName}", key], stdout=subprocess.PIPE)
         out = readCleanSTDOUT(p)
-        print(out)
+        # print(out)
         res = res + out
-    print(res)
+    # print(res)
     return res
 
 
@@ -125,7 +125,7 @@ if __name__ == "__main__":
     user_id = getUserID()
     print(f"User id: {user_id}")
 
-    menu = int(input("Select menu: \n1. New image set\n2. Request Image Set\n3. Revoke\n"))
+    menu = int(input("Select menu: \n1. New image set\n2. Request Image Set\n3. Revoke\n>>>"))
     attribute = "sysadmin"
     # try:
     #     az_sql.insertPerson(user_id, [attribute])
@@ -186,7 +186,9 @@ if __name__ == "__main__":
         abe_pubkey_path = "../abe/pub_key"
         sessionKeyFilePath = f"./keys/{new_set_id}.key.txt"
         try:
+            print("Encrypting Session Key with CP-ABE")
             executeCommand(["cpabe-enc", abe_pubkey_path, sessionKeyFilePath, f"{attribute}"])
+            print("Encrypting Session Key Finished")
         except:
             print("execute command error")
         
@@ -265,7 +267,7 @@ if __name__ == "__main__":
         payload = {"set_id": requestSetId, "uuid": user_id}
         response = requests.post(f"{api_url}/request", json=payload)
         responseJson = json.loads(response.text)
-        print(f"REQUEST RESPONSE: {responseJson}")
+        # print(f"REQUEST RESPONSE: {responseJson}")
         encSKUrl = responseJson.get("key_url")
         sortedBySequence = sorted(responseJson.get('files'), key=lambda d: int(d['sequence']))         
         sortedToList = [x.get('url') for x in sortedBySequence]
@@ -277,23 +279,28 @@ if __name__ == "__main__":
         if not os.path.exists('./downloads/keys'):
             os.makedirs('./downloads/keys')
         keyFileName = encSKUrl.split("/")[-1]
+        print("Downloading Encrypted Session Key")
         response = requests.get(encSKUrl)
         open(f"./downloads/keys/{keyFileName}", "wb").write(response.content)
+        print("Encrypted Session Key Downloaded")
         for i in range(len(sortedToList)):
             url = sortedToList[i]
             # fileExtension = url.split(".")[-1]
             fileName = url.split("/")[-1]
+            print(f"Downloading file: {fileName}", end="")
             response = requests.get(url)
             open(f"./downloads/images/{fileName}", "wb").write(response.content)
+            print("...done")
 
         # FIX CPABE DECRYPTION
         try:
+            print("Decrypting Session Key with CP-ABE")
             abe_pubkey_path = "../abe/pub_key"
             sessionKeyFilePath = f"./downloads/keys/{keyFileName}"
             abeKeyPath = "./sysadmin-key"
             # executeCommand(["cpabe-dec", abe_pubkey_path, abeKeyPath, sessionKeyFilePath])
             subprocess.run(f"cpabe-dec {abe_pubkey_path} {abeKeyPath} {sessionKeyFilePath}", capture_output=True, shell=True)
-
+            print("Decryption Finished")
 
         except Exception as e:
             print(e)
@@ -309,6 +316,7 @@ if __name__ == "__main__":
         set id: d336d5fd-e502-4440-872c-f68cce4c71bc
         key: VTZfYZPvHnaiJCkKXqsnqJgaJztvYINz
         """
+        print("Decrypted...")
         # USE ACTUAL KEY
         extractEncrypted = loopDecode(f"./downloads/images", keyString)
 
@@ -317,6 +325,10 @@ if __name__ == "__main__":
             os.makedirs('./decrypted')
         with open(f"./decrypted/{requestSetId}.txt", "w") as f:
             f.write(extractEncrypted)
-        
+        print(f"Decrypted to /decrypted/{requestSetId}.txt")
+        print("Deleting all files in downloads folder")
         deleteFilesFromFolder('./downloads/images')
         deleteFilesFromFolder('./downloads/keys')
+        print("Deletion complete")
+        print("Exiting program")
+        exit(0)
