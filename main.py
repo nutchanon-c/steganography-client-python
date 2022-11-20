@@ -184,7 +184,7 @@ if __name__ == "__main__":
         abe_pubkey_path = "../abe/pub_key"
         sessionKeyFilePath = f"./keys/{new_set_id}.key.txt"
         try:
-            executeCommand(["cpabe-enc", abe_pubkey_path, sessionKeyFilePath, f"({attribute})"])
+            executeCommand(["cpabe-enc", abe_pubkey_path, sessionKeyFilePath, f"{attribute}"])
         except:
             print("execute command error")
         
@@ -290,14 +290,19 @@ if __name__ == "__main__":
             open(f"./downloads/images/{fileName}", "wb").write(response.content)
 
         # TODO: FIX CPABE DECRYPTION
-        # try:
-        #     abe_pubkey_path = "../abe/pub_key"
-        #     sessionKeyFilePath = f"./downloads/keys/{keyFileName}"
-        #     abeKeyPath = "../sysadmin-key"
-        #     executeCommand(["cpabe-dec", abe_pubkey_path, abeKeyPath, sessionKeyFilePath])
-        # except Exception as e:
-        #     print(e)
+        try:
+            abe_pubkey_path = "../abe/pub_key"
+            sessionKeyFilePath = f"./downloads/keys/{keyFileName}"
+            abeKeyPath = "./sysadmin-key"
+            # executeCommand(["cpabe-dec", abe_pubkey_path, abeKeyPath, sessionKeyFilePath])
+            subprocess.run(f"cpabe-dec {abe_pubkey_path} {abeKeyPath} {sessionKeyFilePath}", capture_output=True, shell=True)
 
+
+        except Exception as e:
+            print(e)
+            
+        keyFileRead = open(f"./downloads/keys/{requestSetId}.key.txt", "r")
+        keyString = keyFileRead.read()
 
 
         """
@@ -306,7 +311,9 @@ if __name__ == "__main__":
         key: VTZfYZPvHnaiJCkKXqsnqJgaJztvYINz
         """
         # TODO: USE ACTUAL KEY
-        extractEncrypted = loopDecode(f"./downloads/images", "VTZfYZPvHnaiJCkKXqsnqJgaJztvYINz")
+
+
+        extractEncrypted = loopDecode(f"./downloads/images", keyString)
 
         # SAVE DECRYPTED TO FILE
         if not os.path.exists('./decrypted'):
