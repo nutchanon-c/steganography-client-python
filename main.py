@@ -316,25 +316,3 @@ if __name__ == "__main__":
         
         deleteFilesFromFolder('./downloads/images')
         deleteFilesFromFolder('./downloads/keys')
-
-
-
-        
-        
-        
-
-    # listDir = os.listdir(imageFolder)
-    # for filename in listDir:
-    #     f = os.path.join(imageFolder, filename)
-    #     print(f)
-
-    #     p = subprocess.Popen(['node', './stega-encode.js', f, message, key], stdout=subprocess.PIPE)
-    #     out = readCleanSTDOUT(p)
-    #     print(out)
-    # p = subprocess.Popen(['node', './stega-decode.js'], stdout=subprocess.PIPE)
-    # out = readCleanSTDOUT(p)
-    # print(out)
-    # for char in out:
-    #     print(char)
-    # testValue = os.getenv('TEST_VALUE')
-    # print(testValue)
