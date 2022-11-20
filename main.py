@@ -13,7 +13,7 @@ import math
 from itertools import islice
 import boto3
 import az_sql
-
+import shutil
 def generate32BitKey():
     res = ''.join(random.choices(string.ascii_letters, k=32))
     return res
@@ -97,142 +97,157 @@ def getUserID():
 
 if __name__ == "__main__":    
     load_dotenv()
-    api_url = os.getenv('API_MASTER_URL')
-    user_id = getUserID()
-    print(f"User id: {user_id}")
+    for i in range(0, 100, 5):
+        original = "./images/1.jpg"
+        api_url = os.getenv('API_MASTER_URL')
+        user_id = getUserID()
+        print(f"User id: {user_id}")
 
-    menu = int(input("Select menu: \n1. New image set\n2. Request Image Set\n3. Revoke\n"))
-    attribute = "sysadmin"
-    try:
-        az_sql.insertPerson(user_id, [attribute])
-    except:
-        print("sql insert user exception")
-    if menu == 1:        
-        # send request for new picture set id
-        res = json.loads(requests.get(f"{api_url}/newID").text)
-        new_set_id = res.get('id')
-        print(f"new set id: {new_set_id}")
-        key = generate32BitKey()
-        print(f"session key generated: {key}")
-
+        # menu = int(input("Select menu: \n1. New image set\n2. Request Image Set\n3. Revoke\n"))
+        menu = 1
+        attribute = "sysadmin"
         try:
-            az_sql.insertImageSet(new_set_id, user_id, [attribute])
+            az_sql.insertPerson(user_id, [attribute])
         except:
-            print("sql insert image set exception")
+            print("sql insert user exception")
+        if menu == 1:        
+            # send request for new picture set id
+            res = json.loads(requests.get(f"{api_url}/newID").text)
+            new_set_id = res.get('id')
+            print(f"new set id: {new_set_id}")
+            key = generate32BitKey()
+            print(f"session key generated: {key}")
 
-        # save key to file
-        if not os.path.exists("./keys"):
-            os.makedirs("./keys")
-        with open(f"./keys/{new_set_id}.key.txt", "w") as f:
-            f.write(key)        
-
-        # ask for plaintext file
-        ptPath = input("Plaintext file path: ")
-
-        # read plaintext from file
-        try:
-            f = open(ptPath, "r")
-            message = f.read()
-            # print(message)
-            f.close()
-        except Exception as e:
-            print(f"open file error: {e}")
-            exit(1)
-        
-
-        
-        # ask for image folder?
-        imageFolder = "./images"
-        
-        outputFolderPath = "./output"
-
-        if not os.path.exists(outputFolderPath):
-            os.mkdir("output")
-
-        # encrypt plaintext with key using fernet
-        encrypted = encryptWithFernet(key, message)
-        # print(encrypted)
-        # decrypted = decryptWithFernet(key, encrypted)
-        # print(decrypted)
-        
-        # encode: DONE!
-        loopEncode(key, imageFolder, message)
-
-        # encrypt key with cpabe
-        abe_pubkey_path = "../abe/pub_key"
-        sessionKeyFilePath = f"./keys/{new_set_id}.key.txt"
-        try:
-            executeCommand(["cpabe-enc", abe_pubkey_path, sessionKeyFilePath, f"({attribute})"])
-        except:
-            print("execute command error")
-        
-        # loop upload and add each url to Map {url: url, sequence: sequence_number}
-        cloudClient = boto3.client(
-            's3',
-            aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
-            aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
-            region_name=os.getenv('AWS_REGION')
-        )
-        clientResponse = cloudClient.list_buckets()
-
-        outputDirList = os.listdir('./output')
-
-        payload = {"files": [], "set_id": new_set_id, "uuid": user_id, "user_attributes": attribute.split()}
-
-        awsBucketName = os.getenv('AWS_BUCKET_NAME')
-        awsRegion = os.getenv('AWS_REGION')
-
-        # CHANGE TO ENCRYPTED KEY PATH
-        try:
-            print(f"Uploading session key", end="")
-            response = cloudClient.upload_file(f"./keys/{new_set_id}.key.txt.cpabe", awsBucketName, f"{user_id}/{new_set_id}/{new_set_id}.key.txt")
-            # response = cloudClient.upload_file(f"./keys/{new_set_id}.key.txt", awsBucketName, f"{user_id}/{new_set_id}/{new_set_id}.key.txt")
-            print("...done", end="\n")
-            keyUrl = f"https://{awsBucketName}.s3.{awsRegion}.amazonaws.com/{user_id}/{new_set_id}/{new_set_id}.key.txt"
-            payload["keyPath"] = keyUrl    
             try:
-                az_sql.insertESK(new_set_id, keyUrl)        
+                az_sql.insertImageSet(new_set_id, user_id, [attribute])
             except:
-                print("sql upload key exception")
-        except Exception as e:
-            print(e)
+                print("sql insert image set exception")
 
+            # save key to file
+            if not os.path.exists("./keys"):
+                os.makedirs("./keys")
+            with open(f"./keys/{new_set_id}.key.txt", "w") as f:
+                f.write(key)        
 
-        seq = 1
-        for fileName in outputDirList:
-            # print(fileName)
+            # ask for plaintext file
+            # ptPath = input("Plaintext file path: ")
+            ptPath = "test.txt"
+
+            # read plaintext from file
             try:
-                print(f"Uploading {fileName}", end="")
-                response = cloudClient.upload_file(f"./output/{fileName}", awsBucketName, f"{user_id}/{new_set_id}/{fileName}")
+                f = open(ptPath, "r")
+                message = f.read()
+                # print(message)
+                f.close()
+            except Exception as e:
+                print(f"open file error: {e}")
+                exit(1)
+            
+
+            
+            # ask for image folder?
+            imageFolder = "./images"
+            
+            outputFolderPath = "./output"
+
+            if not os.path.exists(outputFolderPath):
+                os.mkdir("output")
+
+            # encrypt plaintext with key using fernet
+            encrypted = encryptWithFernet(key, message)
+            # print(encrypted)
+            # decrypted = decryptWithFernet(key, encrypted)
+            # print(decrypted)
+            
+            # encode: DONE!
+            loopEncode(key, imageFolder, message)
+
+            # encrypt key with cpabe
+            abe_pubkey_path = "../abe/pub_key"
+            sessionKeyFilePath = f"./keys/{new_set_id}.key.txt"
+            try:
+                executeCommand(["cpabe-enc", abe_pubkey_path, sessionKeyFilePath, f"({attribute})"])
+            except:
+                print("execute command error")
+            
+            # loop upload and add each url to Map {url: url, sequence: sequence_number}
+            cloudClient = boto3.client(
+                's3',
+                aws_access_key_id=os.getenv('AWS_ACCESS_KEY_ID'),
+                aws_secret_access_key=os.getenv('AWS_SECRET_ACCESS_KEY'),
+                region_name=os.getenv('AWS_REGION')
+            )
+            clientResponse = cloudClient.list_buckets()
+
+            outputDirList = os.listdir('./output')
+
+            payload = {"files": [], "set_id": new_set_id, "uuid": user_id, "user_attributes": attribute.split()}
+
+            awsBucketName = os.getenv('AWS_BUCKET_NAME')
+            awsRegion = os.getenv('AWS_REGION')
+
+            # CHANGE TO ENCRYPTED KEY PATH
+            try:
+                print(f"Uploading session key", end="")
+                # response = cloudClient.upload_file(f"./keys/{new_set_id}.key.txt.cpabe", awsBucketName, f"{user_id}/{new_set_id}/{new_set_id}.key.txt")
+                response = cloudClient.upload_file(f"./keys/{new_set_id}.key.txt", awsBucketName, f"{user_id}/{new_set_id}/{new_set_id}.key.txt")
                 print("...done", end="\n")
-                url = f"https://{awsBucketName}.s3.{awsRegion}.amazonaws.com/{user_id}/{new_set_id}/{fileName}"
-                payload["files"].append({"url": url, "sequence": seq})
+                keyUrl = f"https://{awsBucketName}.s3.{awsRegion}.amazonaws.com/{user_id}/{new_set_id}/{new_set_id}.key.txt"
+                payload["keyPath"] = keyUrl    
                 try:
-                    az_sql.insertSG(new_set_id, keyUrl, url, seq)
-                except Exception as e:
-                    print("sql insert SG exception")
-                    print(e)
-                seq+=1
-                # print(url)
+                    az_sql.insertESK(new_set_id, keyUrl)        
+                except:
+                    print("sql upload key exception")
             except Exception as e:
                 print(e)
-        # print(payload)
 
-        # send payload to master
-        response = requests.post(f"{api_url}/new", json=payload)
-        print(json.loads(response.text))
 
-        # save plaintext and setid
-        if not os.path.exists('./sets.json'):
-            with open("./sets.json", "w") as f:
-                dataToSave = json.dumps({ptPath: new_set_id })
-                f.write(dataToSave)
-        else:
-            with open("./sets.json", "w") as f:
-                loadedData = json.loads(f.read())
-                loadedData[ptPath] = new_set_id
-                f.write(json.dumps(loadedData))
+            seq = 1
+            for fileName in outputDirList:
+                # print(fileName)
+                try:
+                    print(f"Uploading {fileName}", end="")
+                    response = cloudClient.upload_file(f"./output/{fileName}", awsBucketName, f"{user_id}/{new_set_id}/{fileName}")
+                    print("...done", end="\n")
+                    url = f"https://{awsBucketName}.s3.{awsRegion}.amazonaws.com/{user_id}/{new_set_id}/{fileName}"
+                    payload["files"].append({"url": url, "sequence": seq})
+                    try:
+                        az_sql.insertSG(new_set_id, keyUrl, url, seq)
+                    except Exception as e:
+                        print("sql insert SG exception")
+                        print(e)
+                    seq+=1
+                    # print(url)
+                except Exception as e:
+                    print(e)
+            # print(payload)
 
+            # send payload to master
+            response = requests.post(f"{api_url}/new", json=payload)
+            print(json.loads(response.text))
+
+            # save plaintext and setid
+            # if not os.path.exists('./sets.json'):
+            #     with open("./sets.json", "w") as f:
+            #         dataToSave = json.dumps({ptPath: new_set_id })
+            #         f.write(dataToSave)
+            # else:
+            #     with open("./sets.json", "w") as f:
+            #         loadedData = json.loads(f.read())
+            #         loadedData[ptPath] = new_set_id
+            #         f.write(json.dumps(loadedData))
+            for j in range(i+2, i+2+4):
+                output = f"./images/{j}.jpg"
+                shutil.copyfile(original, output)
+            for fileName in os.listdir("./output"):
+                file_path = os.path.join("./output", fileName)
+                try:
+                    if os.path.isfile(file_path) or os.path.islink(file_path):
+                        os.unlink(file_path)
+                    elif os.path.isdir(file_path):
+                        shutil.rmtree(file_path)
+                except Exception as e:
+                    print('Failed to delete %s. Reason: %s' % (file_path, e))
                 
 
         
