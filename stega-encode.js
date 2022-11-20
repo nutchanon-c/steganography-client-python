@@ -23,5 +23,5 @@ stegaEncode(
   file,
   message,
   `./output/${filename.split(".")[0]}.enc.${filename.split(".")[1]}`,
-  "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  key
 );

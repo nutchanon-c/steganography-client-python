@@ -53,7 +53,17 @@ def loopEncode(key, path, message):
         
 
 def loopDecode(folderPath, key):
-    pass
+    listDir = os.listdir(folderPath)
+    listDir = sorted(listDir)
+    res = ""
+    for fileName in listDir:
+        p = subprocess.Popen(['node', './stega-decode.js', f"{folderPath}/{fileName}", key], stdout=subprocess.PIPE)
+        out = readCleanSTDOUT(p)
+        res = res + out
+    print(res)
+    return res
+
+
 
 def executeCommand(commandList):
     p = subprocess.Popen(commandList, stdout=subprocess.PIPE)
@@ -103,11 +113,11 @@ if __name__ == "__main__":
 
     menu = int(input("Select menu: \n1. New image set\n2. Request Image Set\n3. Revoke\n"))
     attribute = "sysadmin"
-    try:
-        az_sql.insertPerson(user_id, [attribute])
-    except:
-        print("sql insert user exception")
-    if menu == 1:        
+    # try:
+    #     az_sql.insertPerson(user_id, [attribute])
+    # except:
+    #     print("sql insert user exception")
+    if menu == 1:   
         # send request for new picture set id
         res = json.loads(requests.get(f"{api_url}/newID").text)
         new_set_id = res.get('id')
@@ -115,10 +125,10 @@ if __name__ == "__main__":
         key = generate32BitKey()
         print(f"session key generated: {key}")
 
-        try:
-            az_sql.insertImageSet(new_set_id, user_id, [attribute])
-        except:
-            print("sql insert image set exception")
+        # try:
+        #     az_sql.insertImageSet(new_set_id, user_id, [attribute])
+        # except:
+        #     print("sql insert image set exception")
 
         # save key to file
         if not os.path.exists("./keys"):
@@ -150,7 +160,7 @@ if __name__ == "__main__":
             os.mkdir("output")
 
         # encrypt plaintext with key using fernet
-        encrypted = encryptWithFernet(key, message)
+        # encrypted = encryptWithFernet(key, message)
         # print(encrypted)
         # decrypted = decryptWithFernet(key, encrypted)
         # print(decrypted)
@@ -188,12 +198,12 @@ if __name__ == "__main__":
             response = cloudClient.upload_file(f"./keys/{new_set_id}.key.txt.cpabe", awsBucketName, f"{user_id}/{new_set_id}/{new_set_id}.key.txt.cpabe")
             # response = cloudClient.upload_file(f"./keys/{new_set_id}.key.txt", awsBucketName, f"{user_id}/{new_set_id}/{new_set_id}.key.txt")
             print("...done", end="\n")
-            keyUrl = f"https://{awsBucketName}.s3.{awsRegion}.amazonaws.com/{user_id}/{new_set_id}/{new_set_id}.key.txt"
+            keyUrl = f"https://{awsBucketName}.s3.{awsRegion}.amazonaws.com/{user_id}/{new_set_id}/{new_set_id}.key.txt.cpabe"
             payload["keyPath"] = keyUrl    
-            try:
-                az_sql.insertESK(new_set_id, keyUrl)        
-            except:
-                print("sql upload key exception")
+            # try:
+            #     az_sql.insertESK(new_set_id, keyUrl)        
+            # except:
+            #     print("sql upload key exception")
         except Exception as e:
             print(e)
 
@@ -207,11 +217,11 @@ if __name__ == "__main__":
                 print("...done", end="\n")
                 url = f"https://{awsBucketName}.s3.{awsRegion}.amazonaws.com/{user_id}/{new_set_id}/{fileName}"
                 payload["files"].append({"url": url, "sequence": seq})
-                try:
-                    az_sql.insertSG(new_set_id, keyUrl, url, seq)
-                except Exception as e:
-                    print("sql insert SG exception")
-                    print(e)
+                # try:
+                #     az_sql.insertSG(new_set_id, keyUrl, url, seq)
+                # except Exception as e:
+                #     print("sql insert SG exception")
+                #     print(e)
                 seq+=1
                 # print(url)
             except Exception as e:
@@ -234,7 +244,56 @@ if __name__ == "__main__":
                 with open("./sets.json", "w") as w:
                     w.write(json.dumps(loadedData))
 
-                
+
+    elif menu == 2:
+        requestSetId = input("Image Set ID: ")
+        payload = {"set_id": requestSetId, "uuid": user_id}
+        response = requests.post(f"{api_url}/request", json=payload)
+        responseJson = json.loads(response.text)
+        print(f"REQUEST RESPONSE: {responseJson}")
+        encSKUrl = responseJson.get("key_url")
+        # for data in responseJson.get('files'):
+        #     print(data)
+        sortedBySequence = sorted(responseJson.get('files'), key=lambda d: int(d['sequence'])) 
+        # for f in sortedBySequence:
+        #     print(f)
+        
+        sortedToList = [x.get('url') for x in sortedBySequence]
+
+
+        # TODO: download files
+        if not os.path.exists('./downloads/images'):
+            os.makedirs('./downloads/images')
+        if not os.path.exists('./downloads/keys'):
+            os.makedirs('./downloads/keys')
+        keyFileName = encSKUrl.split("/")[-1]
+        response = requests.get(encSKUrl)
+        open(f"./downloads/keys/{keyFileName}", "wb").write(response.content)
+        for i in range(len(sortedToList)):
+            url = sortedToList[i]
+            # fileExtension = url.split(".")[-1]
+            fileName = url.split("/")[-1]
+            response = requests.get(url)
+            open(f"./downloads/images/{fileName}", "wb").write(response.content)
+
+        # TODO: FIX CPABE DECRYPTION
+        # try:
+        #     abe_pubkey_path = "../abe/pub_key"
+        #     sessionKeyFilePath = f"./downloads/keys/{keyFileName}"
+        #     abeKeyPath = "../sysadmin-key"
+        #     executeCommand(["cpabe-dec", abe_pubkey_path, abeKeyPath, sessionKeyFilePath])
+        # except Exception as e:
+        #     print(e)
+
+        # TODO: USE ACTUAL KEY
+        extractEncrypted = loopDecode(f"./downloads/images", "PvRENIlqPJHmXJAlQzlnizfWvJFLtuSn")
+
+        # SAVE DECRYPTED TO FILE
+        if not os.path.exists('./decrypted'):
+            os.makedirs('./decrypted')
+        with open(f"./decrypted/{requestSetId}.txt", "w") as f:
+            f.write(extractEncrypted)
+
 
         
         

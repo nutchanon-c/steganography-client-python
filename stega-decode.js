@@ -5,9 +5,11 @@ var args = process.argv;
 function stegaDecode(inputFile, key) {
   const buffer = fs.readFileSync(inputFile);
   const message = sg.default.decode(buffer, "jpg", key);
-  // console.log(message);
+  console.log(message);
   // console.log("--------------------------------");
   return message;
 }
+var inputFile = args[2]
+var key = args[3]
 
-console.log(stegaDecode("./1enc.jpg", "a".repeat(32)));
+stegaDecode(inputFile, key);
