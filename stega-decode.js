@@ -5,7 +5,8 @@ var args = process.argv;
 function stegaDecode(inputFile, key) {
   const buffer = fs.readFileSync(inputFile);
   const message = sg.default.decode(buffer, "jpg", key);
-  console.log(message);
+  // console.log(message);
+  process.stdout.write(message);
   // console.log("--------------------------------");
   return message;
 }

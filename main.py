@@ -43,7 +43,7 @@ def loopEncode(key, path, message):
         messageSplitList.append(''.join(islice(iterator, chunksize)))
         # print(''.join(list(islice(iterator, chunksize))))
     # print(messageSplitList)
-
+    print(messageSplitList)
     for i in range(len(listDir)):
         word = messageSplitList[i]  
         fileName = listDir[i]
@@ -61,6 +61,7 @@ def loopDecode(folderPath, key):
     for fileName in listDir:
         p = subprocess.Popen(['node', './stega-decode.js', f"{folderPath}/{fileName}", key], stdout=subprocess.PIPE)
         out = readCleanSTDOUT(p)
+        print(out)
         res = res + out
     print(res)
     return res
@@ -93,7 +94,8 @@ def decryptWithFernet(key, message):
     return decryptedString
 
 def readCleanSTDOUT(p):
-    return (p.stdout.read().decode()).strip()
+    # print(p.stdout.read().decode())
+    return (p.stdout.read().decode())
 
 def getUserID():
     if not os.path.exists('./uuid.txt'):
@@ -265,16 +267,11 @@ if __name__ == "__main__":
         responseJson = json.loads(response.text)
         print(f"REQUEST RESPONSE: {responseJson}")
         encSKUrl = responseJson.get("key_url")
-        # for data in responseJson.get('files'):
-        #     print(data)
-        sortedBySequence = sorted(responseJson.get('files'), key=lambda d: int(d['sequence'])) 
-        # for f in sortedBySequence:
-        #     print(f)
-        
+        sortedBySequence = sorted(responseJson.get('files'), key=lambda d: int(d['sequence']))         
         sortedToList = [x.get('url') for x in sortedBySequence]
 
 
-        # TODO: download files
+        # download files
         if not os.path.exists('./downloads/images'):
             os.makedirs('./downloads/images')
         if not os.path.exists('./downloads/keys'):
@@ -289,7 +286,7 @@ if __name__ == "__main__":
             response = requests.get(url)
             open(f"./downloads/images/{fileName}", "wb").write(response.content)
 
-        # TODO: FIX CPABE DECRYPTION
+        # FIX CPABE DECRYPTION
         try:
             abe_pubkey_path = "../abe/pub_key"
             sessionKeyFilePath = f"./downloads/keys/{keyFileName}"
@@ -300,7 +297,9 @@ if __name__ == "__main__":
 
         except Exception as e:
             print(e)
-            
+
+
+        # READ DECRYPTED SESSION KEY
         keyFileRead = open(f"./downloads/keys/{requestSetId}.key.txt", "r")
         keyString = keyFileRead.read()
 
@@ -310,9 +309,7 @@ if __name__ == "__main__":
         set id: d336d5fd-e502-4440-872c-f68cce4c71bc
         key: VTZfYZPvHnaiJCkKXqsnqJgaJztvYINz
         """
-        # TODO: USE ACTUAL KEY
-
-
+        # USE ACTUAL KEY
         extractEncrypted = loopDecode(f"./downloads/images", keyString)
 
         # SAVE DECRYPTED TO FILE
