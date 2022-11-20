@@ -28,6 +28,7 @@ def itersplit_into_x_chunks(string, x): # we assume here that x is an int and > 
 
 def loopEncode(key, path, message):
     listDir = os.listdir(path)
+    listDir = sorted(listDir)
     # messageSplitList = textwrap.wrap(message,  math.ceil(len(message) / (len(listDir) - 1)))    
     # print("".join(splitList))
     # print(len(listDir))
@@ -298,7 +299,7 @@ if __name__ == "__main__":
         #     print(e)
 
         # TODO: USE ACTUAL KEY
-        extractEncrypted = loopDecode(f"./downloads/images", "PvRENIlqPJHmXJAlQzlnizfWvJFLtuSn")
+        extractEncrypted = loopDecode(f"./downloads/images", "VEmTHAFrTnRQMynNuzdEvPkjBiGNPIaG")
 
         # SAVE DECRYPTED TO FILE
         if not os.path.exists('./decrypted'):
