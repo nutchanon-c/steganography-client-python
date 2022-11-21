@@ -203,7 +203,7 @@ if __name__ == "__main__":
 
         outputDirList = os.listdir('./output')
 
-        payload = {"files": [], "set_id": new_set_id, "uuid": user_id, "user_attributes": attribute.split()}
+        payload = {"files": [], "set_id": new_set_id, "uuid": str(user_id), "user_attributes": attribute.split()}
 
         awsBucketName = os.getenv('AWS_BUCKET_NAME')
         awsRegion = os.getenv('AWS_REGION')
@@ -299,7 +299,8 @@ if __name__ == "__main__":
             sessionKeyFilePath = f"./downloads/keys/{keyFileName}"
             abeKeyPath = "./sysadmin-key"
             # executeCommand(["cpabe-dec", abe_pubkey_path, abeKeyPath, sessionKeyFilePath])
-            subprocess.run(f"cpabe-dec {abe_pubkey_path} {abeKeyPath} {sessionKeyFilePath}", capture_output=True, shell=True)
+            p = subprocess.run(f"cpabe-dec {abe_pubkey_path} {abeKeyPath} {sessionKeyFilePath}", shell=True, stdout=subprocess.DEVNULL)
+
             print("Decryption Finished")
 
         except Exception as e:
