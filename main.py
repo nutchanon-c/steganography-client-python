@@ -15,27 +15,23 @@ from itertools import islice
 import boto3
 import az_sql
 
+
 def generate32BitKey():
     res = ''.join(random.choices(string.ascii_letters, k=32))
     return res
 
 
-def itersplit_into_x_chunks(string, x): # we assume here that x is an int and > 0
+# we assume here that x is an int and > 0
+def itersplit_into_x_chunks(string, x):
     size = len(string)
     chunksize = size//x
     for pos in range(0, size, chunksize):
         yield string[pos:pos+chunksize]
 
+
 def loopEncode(key, path, message):
     listDir = os.listdir(path)
     listDir = sorted(listDir)
-    # messageSplitList = textwrap.wrap(message,  math.ceil(len(message) / (len(listDir) - 1)))    
-    # print("".join(splitList))
-    # print(len(listDir))
-    # print(len(messageSplitList))
-    # print(messageSplitList)
-    # print(''.join(messageSplitList) == message)
-
     chunksize = -(-len(message) // len(listDir))
     iterator = iter(message)
     messageSplitList = []
@@ -45,27 +41,28 @@ def loopEncode(key, path, message):
     # print(messageSplitList)
     # print(messageSplitList)
     for i in range(len(listDir)):
-        word = messageSplitList[i]  
+        word = messageSplitList[i]
         fileName = listDir[i]
         f = os.path.join(path, fileName)
         # print(f)
-        p = subprocess.Popen(['node', './stega-encode.js', f, word, key, f"{(str(i)).zfill(len(str(len(listDir))))}.jpg"], stdout=subprocess.PIPE)
+        p = subprocess.Popen(['node', './stega-encode.js', f, word, key,
+                             f"{(str(i)).zfill(len(str(len(listDir))))}.jpg"], stdout=subprocess.PIPE)
         out = readCleanSTDOUT(p)
         # print(out)
-        
+
 
 def loopDecode(folderPath, key):
     listDir = os.listdir(folderPath)
     listDir = sorted(listDir)
     res = ""
     for fileName in listDir:
-        p = subprocess.Popen(['node', './stega-decode.js', f"{folderPath}/{fileName}", key], stdout=subprocess.PIPE)
+        p = subprocess.Popen(['node', './stega-decode.js',
+                             f"{folderPath}/{fileName}", key], stdout=subprocess.PIPE)
         out = readCleanSTDOUT(p)
         # print(out)
         res = res + out
     # print(res)
     return res
-
 
 
 def executeCommand(commandList):
@@ -77,13 +74,15 @@ def executeCommandAndGetValue(command):
     # TODO: implement. See dunder main
     pass
 
-def encryptWithFernet(key, message):    
+
+def encryptWithFernet(key, message):
     encodedKey = key.encode("utf-8")
     keyB64 = base64.b64encode(encodedKey)
     fernet = Fernet(keyB64)
     encryptedMessage = fernet.encrypt(bytes(message, encoding="utf-8"))
     encryptedString = encryptedMessage.decode("utf-8")
     return encryptedString
+
 
 def decryptWithFernet(key, message):
     encodedKey = key.encode("utf-8")
@@ -93,45 +92,49 @@ def decryptWithFernet(key, message):
     decryptedString = decrypted.decode("utf-8")
     return decryptedString
 
+
 def readCleanSTDOUT(p):
     # print(p.stdout.read().decode())
     return (p.stdout.read().decode())
 
+
 def getUserID():
     if not os.path.exists('./uuid.txt'):
         id = uuid.uuid4()
-        with open ("./uuid.txt", "w") as f:
+        with open("./uuid.txt", "w") as f:
             f.write(str(id))
         return id
     else:
-        with open("./uuid.txt","r") as f:
+        with open("./uuid.txt", "r") as f:
             return f.read()
 
+
 def deleteFilesFromFolder(folder):
-        for fileName in os.listdir(folder):
-            file_path = os.path.join(folder, fileName)
-            try:
-                if os.path.isfile(file_path) or os.path.islink(file_path):
-                    os.unlink(file_path)
-                elif os.path.isdir(file_path):
-                    shutil.rmtree(file_path)
-            except Exception as e:
-                print('Failed to delete %s. Reason: %s' % (file_path, e))
+    for fileName in os.listdir(folder):
+        file_path = os.path.join(folder, fileName)
+        try:
+            if os.path.isfile(file_path) or os.path.islink(file_path):
+                os.unlink(file_path)
+            elif os.path.isdir(file_path):
+                shutil.rmtree(file_path)
+        except Exception as e:
+            print('Failed to delete %s. Reason: %s' % (file_path, e))
 
 
-if __name__ == "__main__":    
+if __name__ == "__main__":
     load_dotenv()
     api_url = os.getenv('API_MASTER_URL')
     user_id = getUserID()
     print(f"User id: {user_id}")
 
-    menu = int(input("Select menu: \n1. New image set\n2. Request Image Set\n3. Revoke\n>>>"))
+    menu = int(
+        input("Select menu: \n1. New image set\n2. Request Image Set\n3. Revoke\n>>>"))
     attribute = "sysadmin"
     # try:
     #     az_sql.insertPerson(user_id, [attribute])
     # except:
     #     print("sql insert user exception")
-    if menu == 1:   
+    if menu == 1:
         # send request for new picture set id
         res = json.loads(requests.get(f"{api_url}/newID").text)
         new_set_id = res.get('id')
@@ -148,7 +151,7 @@ if __name__ == "__main__":
         if not os.path.exists("./keys"):
             os.makedirs("./keys")
         with open(f"./keys/{new_set_id}.key.txt", "w") as f:
-            f.write(key)        
+            f.write(key)
 
         # ask for plaintext file
         ptPath = input("Plaintext file path: ")
@@ -162,12 +165,10 @@ if __name__ == "__main__":
         except Exception as e:
             print(f"open file error: {e}")
             exit(1)
-        
 
-        
         # ask for image folder?
         imageFolder = "./images"
-        
+
         outputFolderPath = "./output"
 
         if not os.path.exists(outputFolderPath):
@@ -178,7 +179,7 @@ if __name__ == "__main__":
         # print(encrypted)
         # decrypted = decryptWithFernet(key, encrypted)
         # print(decrypted)
-        
+
         # encode: DONE!
         loopEncode(key, imageFolder, message)
 
@@ -187,11 +188,12 @@ if __name__ == "__main__":
         sessionKeyFilePath = f"./keys/{new_set_id}.key.txt"
         try:
             print("Encrypting Session Key with CP-ABE")
-            executeCommand(["cpabe-enc", abe_pubkey_path, sessionKeyFilePath, f"{attribute}"])
+            executeCommand(["cpabe-enc", abe_pubkey_path,
+                           sessionKeyFilePath, f"{attribute}"])
             print("Encrypting Session Key Finished")
         except:
             print("execute command error")
-        
+
         # loop upload and add each url to Map {url: url, sequence: sequence_number}
         cloudClient = boto3.client(
             's3',
@@ -203,7 +205,8 @@ if __name__ == "__main__":
 
         outputDirList = os.listdir('./output')
 
-        payload = {"files": [], "set_id": new_set_id, "uuid": str(user_id), "user_attributes": attribute.split()}
+        payload = {"files": [], "set_id": new_set_id, "uuid": str(
+            user_id), "user_attributes": attribute.split()}
 
         awsBucketName = os.getenv('AWS_BUCKET_NAME')
         awsRegion = os.getenv('AWS_REGION')
@@ -211,25 +214,26 @@ if __name__ == "__main__":
         # CHANGE TO ENCRYPTED KEY PATH
         try:
             print(f"Uploading session key", end="")
-            response = cloudClient.upload_file(f"./keys/{new_set_id}.key.txt.cpabe", awsBucketName, f"{user_id}/{new_set_id}/{new_set_id}.key.txt.cpabe")
+            response = cloudClient.upload_file(
+                f"./keys/{new_set_id}.key.txt.cpabe", awsBucketName, f"{user_id}/{new_set_id}/{new_set_id}.key.txt.cpabe")
             # response = cloudClient.upload_file(f"./keys/{new_set_id}.key.txt", awsBucketName, f"{user_id}/{new_set_id}/{new_set_id}.key.txt")
             print("...done", end="\n")
             keyUrl = f"https://{awsBucketName}.s3.{awsRegion}.amazonaws.com/{user_id}/{new_set_id}/{new_set_id}.key.txt.cpabe"
-            payload["keyPath"] = keyUrl    
+            payload["keyPath"] = keyUrl
             # try:
-            #     az_sql.insertESK(new_set_id, keyUrl)        
+            #     az_sql.insertESK(new_set_id, keyUrl)
             # except:
             #     print("sql upload key exception")
         except Exception as e:
             print(e)
-
 
         seq = 1
         for fileName in outputDirList:
             # print(fileName)
             try:
                 print(f"Uploading {fileName}", end="")
-                response = cloudClient.upload_file(f"./output/{fileName}", awsBucketName, f"{user_id}/{new_set_id}/{fileName}")
+                response = cloudClient.upload_file(
+                    f"./output/{fileName}", awsBucketName, f"{user_id}/{new_set_id}/{fileName}")
                 print("...done", end="\n")
                 url = f"https://{awsBucketName}.s3.{awsRegion}.amazonaws.com/{user_id}/{new_set_id}/{fileName}"
                 payload["files"].append({"url": url, "sequence": seq})
@@ -238,7 +242,7 @@ if __name__ == "__main__":
                 # except Exception as e:
                 #     print("sql insert SG exception")
                 #     print(e)
-                seq+=1
+                seq += 1
                 # print(url)
             except Exception as e:
                 print(e)
@@ -251,7 +255,7 @@ if __name__ == "__main__":
         # save plaintext and setid
         if not os.path.exists('./sets.json'):
             with open("./sets.json", "w") as f:
-                dataToSave = json.dumps({ptPath: new_set_id })
+                dataToSave = json.dumps({ptPath: new_set_id})
                 f.write(dataToSave)
         else:
             with open("./sets.json") as f:
@@ -261,17 +265,16 @@ if __name__ == "__main__":
                     w.write(json.dumps(loadedData))
         deleteFilesFromFolder('./output')
 
-
     elif menu == 2:
         requestSetId = input("Image Set ID: ")
         payload = {"set_id": requestSetId, "uuid": user_id}
         response = requests.post(f"{api_url}/request", json=payload)
         responseJson = json.loads(response.text)
-        # print(f"REQUEST RESPONSE: {responseJson}")
+        print(f"REQUEST RESPONSE: {responseJson}")
         encSKUrl = responseJson.get("key_url")
-        sortedBySequence = sorted(responseJson.get('files'), key=lambda d: int(d['sequence']))         
+        sortedBySequence = sorted(responseJson.get(
+            'files'), key=lambda d: int(d['sequence']))
         sortedToList = [x.get('url') for x in sortedBySequence]
-
 
         # download files
         if not os.path.exists('./downloads/images'):
@@ -289,7 +292,8 @@ if __name__ == "__main__":
             fileName = url.split("/")[-1]
             print(f"Downloading file: {fileName}", end="")
             response = requests.get(url)
-            open(f"./downloads/images/{fileName}", "wb").write(response.content)
+            open(f"./downloads/images/{fileName}",
+                 "wb").write(response.content)
             print("...done")
 
         # FIX CPABE DECRYPTION
@@ -298,19 +302,17 @@ if __name__ == "__main__":
             abe_pubkey_path = "../abe/pub_key"
             sessionKeyFilePath = f"./downloads/keys/{keyFileName}"
             abeKeyPath = "./sysadmin-key"
-            # executeCommand(["cpabe-dec", abe_pubkey_path, abeKeyPath, sessionKeyFilePath])
-            p = subprocess.run(f"cpabe-dec {abe_pubkey_path} {abeKeyPath} {sessionKeyFilePath}", shell=True, stdout=subprocess.DEVNULL)
+            p = subprocess.run(
+                f"cpabe-dec {abe_pubkey_path} {abeKeyPath} {sessionKeyFilePath}", shell=True, stdout=subprocess.DEVNULL)
 
             print("Decryption Finished")
 
         except Exception as e:
             print(e)
 
-
         # READ DECRYPTED SESSION KEY
         keyFileRead = open(f"./downloads/keys/{requestSetId}.key.txt", "r")
         keyString = keyFileRead.read()
-
 
         """
         MOCK DATA: 
@@ -340,7 +342,7 @@ if __name__ == "__main__":
         newAttributes = input("New Attributes (comma-separated): ")
         newAttributesList = newAttributes.split(",")
         print(newAttributesList)
-        payload = {"uuid": user_id, "new_attr": newAttributesList, "set_id": revokeSetId}
+        payload = {"uuid": user_id,
+                   "new_attr": newAttributesList, "set_id": revokeSetId}
         response = requests.post(f"{api_url}/revoke", json=payload)
         print(response.text)
-
