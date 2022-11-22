@@ -1,4 +1,3 @@
-// console.log("encode");
 const sg = require("any-steganography");
 const fs = require("fs");
 var args = process.argv;
