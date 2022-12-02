@@ -42,7 +42,7 @@ To run the program, simply go into the directory with `cd` and run the `main.py`
 
 ## Attributes for ABE
 
-Currently, the attribute is fixed but you can change the attribute(s) in `line 132` in `main.py`. If you want to use a different attribute, you would need to generate a new ABE key and change the key path on `line 304` in `main.py` as well.
+Currently, the attribute is fixed for testing purposes, but you can change the attribute(s) in `line 132` in `main.py`. If you want to use a different attribute, you would need to generate a new ABE key and change the key path on `line 304` in `main.py` as well.
 
 ## Generating CP-ABE Keys
 
