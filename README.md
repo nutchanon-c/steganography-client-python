@@ -7,6 +7,7 @@
   - [Attributes for ABE](#attributes-for-abe)
   - [Generating CP-ABE keys:](#generating-cp-abe-keys)
   - [Additionals](#additionals)
+  - [Performance Testing](#performance-testing)
 
 ## System Requirements
 
@@ -56,3 +57,7 @@ If you wan to query data to Azure SQL database as well (for testing purposes), a
 - `AZURE_USERNAME`
 - `AZURE_PASSWORD`
 - `AZURE_DRIVER="{ODBC Driver 17 for SQL Server}"`
+
+
+## Performance Testing
+For performance testing, you can use the branch `perf-test` to do so.
