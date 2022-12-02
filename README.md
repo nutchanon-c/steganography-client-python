@@ -5,7 +5,7 @@
   - [Setup](#setup)
   - [Running](#running)
   - [Attributes for ABE](#attributes-for-abe)
-  - [Generating CP-ABE keys:](#generating-cp-abe-keys)
+  - [Generating CP-ABE Keys](#generating-cp-abe-keys)
   - [Additionals](#additionals)
   - [Performance Testing](#performance-testing)
 
@@ -44,7 +44,7 @@ To run the program, simply go into the directory with `cd` and run the `main.py`
 
 Currently, the attribute is fixed but you can change the attribute(s) in `line 132` in `main.py`. If you want to use a different attribute, you would need to generate a new ABE key and change the key path on `line 304` in `main.py` as well.
 
-## Generating CP-ABE keys:
+## Generating CP-ABE Keys
 
 Please refer to [this link](https://acsc.cs.utexas.edu/cpabe/tutorial.html) for tutorial.
 
