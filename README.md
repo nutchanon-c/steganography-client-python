@@ -1,5 +1,11 @@
-# Steganography Python Client
-## SIIT CSS453 Final Project
+# SIIT CSS453 Final Project: Steganography Python Client
+
+- [SIIT CSS453 Final Project: Steganography Python Client](#siit-css453-final-project-steganography-python-client)
+  - [Setup](#setup)
+  - [Running](#running)
+  - [Attributes for ABE](#attributes-for-abe)
+  - [Generating CP-ABE keys:](#generating-cp-abe-keys)
+  - [Additionals](#additionals)
 
 ## Setup
 1. Installing Packages
