@@ -100,11 +100,11 @@ def getUserID():
 
 if __name__ == "__main__":    
     load_dotenv()
-    for i in range(0, 100, 5):
+    for i in range(0, 1000, 50):
 
         original = "./images/1.jpg"
 
-        for j in range(i + 1, i + 6):
+        for j in range(i + 1, i + 51):
             output = f"./images/{j}.jpg"
             try:
                 shutil.copyfile(original, output)
