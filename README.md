@@ -17,4 +17,13 @@
      - `AWS_REGION`  : AWS region such as `"ap-southeast-1"`
 ## Running
 To run the program, simply go into the directory with `cd` and run the `main.py` file. **The server should be running for the program to work**
+
+
+## Additionals
+If you wan to query data to Azure SQL database as well (for testing purposes), add these keys and values to the `.env` file:
+- `AZURE_SERVER`
+- `AZURE_DATABASE`
+- `AZURE_USERNAME`
+- `AZURE_PASSWORD`
+- `AZURE_DRIVER="{ODBC Driver 17 for SQL Server}"`
     
